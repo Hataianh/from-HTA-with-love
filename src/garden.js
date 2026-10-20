@@ -1,5 +1,5 @@
-// Draw flowers onto five cached canvas layers. The renderer runs only while
-// flowers open or the viewport changes; the finished garden sways via CSS.
+// Cache petals, stems and complete plants. One canvas handles opening; each
+// cached cluster then sways independently using composited CSS transforms.
 const PALETTE = [338, 344, 350, 18, 28, 84, 96, 192, 202];
 const LAYERS = [
   { count: 18, height: .26, spread: .23, radius: 21, opacity: .70 },
@@ -48,6 +48,7 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
   let start = null;
   let active = false;
   let destroyed = false;
+  let paused = false;
   let resized = false;
   let width = 0, height = 0;
   let seedFlowers = [];
@@ -68,7 +69,11 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
   motionCanvas.setAttribute('aria-hidden', 'true');
   container.appendChild(motionCanvas);
   container.dataset.animation = 'idle';
+  container.dataset.renderer = reducedMotion ? 'still' : 'wind';
   const motionCtx = motionCanvas.getContext('2d');
+  const sprigs = document.createElement('div');
+  sprigs.className = 'garden-sprigs';
+  container.appendChild(sprigs);
 
   // Rasterize each petal design once instead of resizing vector paths per frame.
   const ready = Promise.all(PALETTE.flatMap(hue => [0, 1].map(async variant => {
@@ -107,6 +112,9 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
           hue: PALETTE[Math.floor(random() * PALETTE.length)],
           variant: index % 2,
           opacity: settings.opacity,
+          phase: random() * TAU,
+          frequency: .65 + random() * .38,
+          sway: .027 + random() * .024,
           delay: Math.abs(x - .5) * .95 + depth * .19 + random() * .35,
           duration: 2.7 + random() * .7,
         };
@@ -161,8 +169,49 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
     ctx.restore();
   }
 
-  // Prepare the finished layers before playback; showing them needs no redraw.
   function paintStatic() {
+    if (!reducedMotion) {
+      const fragment = document.createDocumentFragment();
+      const dpr = Math.min(devicePixelRatio || 1, 1.5);
+      const clusterCount = width <= 700 ? 4 : 6;
+      for (let depth = 0; depth < layers.length; depth++) {
+        const clusters = Array.from({ length: clusterCount }, () => []);
+        for (const flower of layers[depth].flowers) {
+          const index = Math.max(0, Math.min(clusterCount - 1, Math.floor(flower.x / width * clusterCount)));
+          clusters[index].push(flower);
+        }
+        clusters.forEach((flowers, index) => {
+          if (!flowers.length) return;
+          const bounds = flowers.map(f => {
+            const stemHeight = f.ground - f.y;
+            const headX = f.x + Math.sin(f.angle) * stemHeight;
+            const headY = f.ground - Math.cos(f.angle) * stemHeight;
+            return { left: Math.min(f.x - 34, headX - f.radius - 5), right: Math.max(f.x + 34, headX + f.radius + 5), top: headY - f.radius - 6 };
+          });
+          const left = Math.floor(Math.min(...bounds.map(b => b.left)));
+          const right = Math.ceil(Math.max(...bounds.map(b => b.right)));
+          const top = Math.max(0, Math.floor(Math.min(...bounds.map(b => b.top))));
+          const clusterWidth = right - left;
+          const clusterHeight = Math.max(1, height - top);
+          const plant = document.createElement('canvas');
+          plant.className = 'garden-sprig';
+          plant.dataset.depth = String(depth);
+          plant.dataset.flowers = String(flowers.length);
+          const resolution = Math.min(dpr, depth < 3 ? 1 : 1.25);
+          plant.width = Math.ceil(clusterWidth * resolution);
+          plant.height = Math.ceil(clusterHeight * resolution);
+          const lead = flowers[0];
+          const wind = (.022 + depth * .003) * ((index + depth) % 2 ? -1 : 1);
+          plant.style.cssText = `left:${left}px;top:${top}px;width:${clusterWidth}px;height:${clusterHeight}px;--lean:0rad;--wind:${wind}rad;--period:${(Math.PI * 2 / lead.frequency).toFixed(2)}s;--delay:${(lead.phase / Math.PI * .3).toFixed(2)}s`;
+          const ctx = plant.getContext('2d');
+          ctx.setTransform(resolution, 0, 0, resolution, -left * resolution, -top * resolution);
+          for (const flower of flowers) paintFlower(ctx, depth, flower, 1);
+          fragment.appendChild(plant);
+        });
+      }
+      sprigs.replaceChildren(fragment);
+      return;
+    }
     for (let depth = 0; depth < layers.length; depth++) {
       const { ctx, flowers } = layers[depth];
       ctx.clearRect(0, 0, width, height);
@@ -188,7 +237,7 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
 
   function tick(now) {
     frame = 0;
-    if (!active || destroyed) return;
+    if (!active || destroyed || paused) return;
     if (!draw(now)) frame = requestAnimationFrame(tick);
     else container.dataset.animation = 'idle';
   }
@@ -202,7 +251,7 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
 
   document.addEventListener('visibilitychange', () => {
     cancelAnimationFrame(frame); frame = 0;
-    if (!document.hidden && active) frame = requestAnimationFrame(tick);
+    if (!document.hidden && active && !paused) frame = requestAnimationFrame(tick);
   });
 
   return {
@@ -213,6 +262,17 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
       container.dataset.animation = 'blooming';
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(tick);
+    },
+    pause() {
+      paused = true;
+      cancelAnimationFrame(frame); frame = 0;
+    },
+    resume() {
+      paused = false;
+      if (active && !document.hidden) {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(tick);
+      }
     },
     reset() {
       active = false; start = null;

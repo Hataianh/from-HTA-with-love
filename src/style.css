@@ -29,10 +29,9 @@
 /* Uneven heights and independent blossom sizes across five depth planes. */
 .garden{inset:auto 0 0;height:53%;mask-image:none;overflow:hidden;contain:layout paint}
 .garden-canvas,.garden-motion{position:absolute;inset:0;width:100%;height:100%;visibility:hidden;transform-origin:50% 100%}
-.bloomed .garden[data-animation="blooming"] .garden-motion{visibility:visible}
-.bloomed .garden[data-animation="idle"] .garden-canvas{visibility:visible}
-.bloomed .garden[data-animation="idle"] .garden-canvas:nth-of-type(n+4){animation:layer-breeze calc(11s + var(--depth) * .8s) ease-in-out infinite;animation-delay:calc(var(--depth) * .3s)}
-@keyframes layer-breeze{0%,50%,100%{transform:translate3d(0,0,0) rotate(0)}25%{transform:translate3d(-1.5px,0,0) rotate(-.14deg)}75%{transform:translate3d(1.5px,0,0) rotate(.14deg)}}
+.bloomed .garden[data-renderer="wind"] .garden-motion{visibility:visible;transition:opacity .35s;opacity:1}
+.bloomed .garden[data-renderer="wind"][data-animation="idle"] .garden-motion{opacity:0}
+.bloomed .garden[data-renderer="still"] .garden-canvas{visibility:visible}
 /* Keep the hero's motion on the compositor instead of changing its layout. */
 .hero-flower,.bloomed .hero-flower{top:var(--hero-top,40%);height:var(--hero-height,37%);width:var(--hero-width,180px);transition:transform 3s cubic-bezier(.22,1,.36,1);transform-origin:50% 0}
 .bloomed .hero-flower{transform:translate(-50%,13svh) scale(1.27)}
@@ -42,4 +41,11 @@
 @media(max-width:700px){.garden{height:44%}.hero-flower{--hero-top:43%;--hero-height:32%;--hero-width:145px}.bloomed .hero-flower{transform:translate(-50%,11svh) scale(1.27)}}
 @media(max-height:740px) and (min-width:701px){.hero-flower{--hero-top:39%;--hero-height:35%}}
 
-.experience:has(dialog[open]) .garden-canvas{animation-play-state:paused}
+
+/* Small flower clusters sway at different speeds and directions on the compositor. */
+.garden-sprigs{position:absolute;inset:0;visibility:hidden;opacity:0;transition:opacity .35s}
+.bloomed .garden[data-renderer="wind"][data-animation="idle"] .garden-sprigs{visibility:visible;opacity:1}
+.garden-sprig{position:absolute;transform-origin:50% 100%;transform:rotate(var(--lean));will-change:transform}
+.bloomed .garden[data-animation="idle"] .garden-sprig{animation:flower-wind var(--period) linear var(--delay) infinite}
+@keyframes flower-wind{0%,50%{transform:rotate(var(--lean));animation-timing-function:cubic-bezier(.33,.52,.66,1)}25%{transform:rotate(calc(var(--lean) - var(--wind)));animation-timing-function:cubic-bezier(.33,0,.66,.48)}75%{transform:rotate(calc(var(--lean) + var(--wind)));animation-timing-function:cubic-bezier(.33,0,.66,.48)}100%{transform:rotate(var(--lean))}}
+.bloomed:has(dialog[open]) .garden[data-animation="idle"] .garden-sprig{animation-play-state:paused}

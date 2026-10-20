@@ -100,7 +100,8 @@ $('replay').addEventListener('click', () => {
   $('replay').hidden = true;
   bloomed = false;
 });
-$('open-letter').addEventListener('click', () => $('letter').showModal());
+$('open-letter').addEventListener('click', () => { garden.pause(); $('letter').showModal(); });
+$('letter').addEventListener('close', () => garden.resume());
 $('close-letter').addEventListener('click', () => $('letter').close());
 $('letter').addEventListener('click', (e) => { if (e.target === $('letter')) { const r = $('letter').getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) $('letter').close(); } });
 
