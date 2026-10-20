@@ -43,6 +43,39 @@ function stemSprite(depth, variant) {
   return canvas;
 }
 
+// Closed and half-open buds share the same cached painting path as full roses.
+function budSprite(hue, halfOpen) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 192;
+  const ctx = canvas.getContext('2d');
+  ctx.translate(96, 96); ctx.scale(2, 2);
+  const color = (light) => `hsl(${hue} 63% ${light}%)`;
+  const back = ctx.createLinearGradient(-20, -35, 18, 34);
+  back.addColorStop(0, color(88)); back.addColorStop(.45, color(73)); back.addColorStop(1, color(54));
+  const front = ctx.createLinearGradient(22, -27, -12, 29);
+  front.addColorStop(0, color(92)); front.addColorStop(.4, color(81)); front.addColorStop(1, color(62));
+  const petal = (path, fill) => {
+    ctx.fillStyle = fill; ctx.fill(new Path2D(path));
+    ctx.strokeStyle = color(92); ctx.lineWidth = .65;
+    ctx.stroke(new Path2D(path));
+  };
+  petal('M0 34C-23 18-22-11-3-37C0-43 5-35 10-29C28-12 22 18 0 34Z', back);
+  if (halfOpen) {
+    petal('M1 32C-22 24-28 1-24-22C-20-28-16-24-10-28C-11-14 4-11 7-3C12 10 6 24 1 32Z', front);
+    petal('M0 33C-4 8-3-8 13-24C18-29 24-24 28-27C32-2 16 23 0 33Z', back);
+  } else {
+    petal('M0 33C-21 14-21-11-3-37C-8-8 8-4 0 33Z', front);
+    petal('M0 33C-7 7 10-3 11-30C25-9 20 19 0 33Z', back);
+  }
+  const green = ctx.createLinearGradient(-18, 8, 16, 42);
+  green.addColorStop(0, '#86ad79'); green.addColorStop(.5, '#43865a'); green.addColorStop(1, '#2e6944');
+  ctx.fillStyle = green;
+  ctx.fill(new Path2D('M0 43C-9 34-18 22-22 5C-15 15-11 20-5 22C-5 10-3 6 1 3C4 15 7 19 7 22C13 16 20 11 24 4C21 23 9 40 0 43Z'));
+  ctx.strokeStyle = '#acd09899'; ctx.lineWidth = .65;
+  ctx.stroke(new Path2D('M0 40C-2 31-2 20 1 8M-2 34-15 17M3 34 17 16'));
+  return canvas;
+}
+
 export function createGarden(container, getBlossomUrl, reducedMotion) {
   let frame = 0;
   let start = null;
@@ -54,6 +87,7 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
   let seedFlowers = [];
   let readyComplete = false;
   const heads = new Map();
+  const buds = new Map(PALETTE.flatMap(hue => [0, 1].map(variant => [`${hue}-${variant}`, budSprite(hue, variant)])));
   const stems = LAYERS.map((_, depth) => [stemSprite(depth, 0), stemSprite(depth, 1)]);
   const layers = LAYERS.map((_, depth) => {
     const canvas = document.createElement('canvas');
@@ -118,13 +152,17 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
           delay: Math.abs(x - .5) * .95 + depth * .19 + random() * .35,
           duration: 2.7 + random() * .7,
         };
+        flower.isBud = (index + depth * 2) % 7 === 3;
+        if (flower.isBud) flower.y = Math.max(flower.radius + 6, flower.y - height * .08);
         layer.flowers.push(flower); seedFlowers.push(flower);
       }
       // Low blooms are painted over taller neighbours for an irregular canopy.
       layer.flowers.sort((a, b) => a.y - b.y);
       layer.canvas.dataset.flowers = String(layer.flowers.length);
+      layer.canvas.dataset.buds = String(layer.flowers.filter(f => f.isBud).length);
     });
     container.dataset.flowers = String(seedFlowers.length);
+    container.dataset.buds = String(seedFlowers.filter(f => f.isBud).length);
   }
 
   function resize() {
@@ -165,7 +203,7 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
     ctx.translate(flower.x, flower.ground);
     ctx.rotate(flower.angle * grown);
     ctx.drawImage(stems[depth][flower.variant], -30, -stemHeight, 60, stemHeight);
-    ctx.drawImage(heads.get(`${flower.hue}-${flower.variant}`), -headRadius, -stemHeight - headRadius, headRadius * 2, headRadius * 2);
+    ctx.drawImage((flower.isBud ? buds : heads).get(`${flower.hue}-${flower.variant}`), -headRadius, -stemHeight - headRadius, headRadius * 2, headRadius * 2);
     ctx.restore();
   }
 
@@ -197,6 +235,7 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
           plant.className = 'garden-sprig';
           plant.dataset.depth = String(depth);
           plant.dataset.flowers = String(flowers.length);
+          plant.dataset.buds = String(flowers.filter(f => f.isBud).length);
           const resolution = Math.min(dpr, depth < 3 ? 1 : 1.25);
           plant.width = Math.ceil(clusterWidth * resolution);
           plant.height = Math.ceil(clusterHeight * resolution);
