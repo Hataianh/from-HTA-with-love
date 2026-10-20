@@ -30,7 +30,8 @@
 .garden{inset:auto 0 0;height:53%;mask-image:none;overflow:hidden;contain:layout paint}
 .garden-canvas,.garden-motion{position:absolute;inset:0;width:100%;height:100%;visibility:hidden;transform-origin:50% 100%}
 .bloomed .garden[data-animation="blooming"] .garden-motion{visibility:visible}
-.bloomed .garden[data-animation="idle"] .garden-canvas{visibility:visible;animation:layer-breeze calc(11s + var(--depth) * .8s) ease-in-out infinite;animation-delay:calc(var(--depth) * .3s)}
+.bloomed .garden[data-animation="idle"] .garden-canvas{visibility:visible}
+.bloomed .garden[data-animation="idle"] .garden-canvas:nth-of-type(n+4){animation:layer-breeze calc(11s + var(--depth) * .8s) ease-in-out infinite;animation-delay:calc(var(--depth) * .3s)}
 @keyframes layer-breeze{0%,50%,100%{transform:translate3d(0,0,0) rotate(0)}25%{transform:translate3d(-1.5px,0,0) rotate(-.14deg)}75%{transform:translate3d(1.5px,0,0) rotate(.14deg)}}
 /* Keep the hero's motion on the compositor instead of changing its layout. */
 .hero-flower,.bloomed .hero-flower{top:var(--hero-top,40%);height:var(--hero-height,37%);width:var(--hero-width,180px);transition:transform 3s cubic-bezier(.22,1,.36,1);transform-origin:50% 0}
