@@ -23,25 +23,46 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let bloomed = false;
 let bloomTimer;
 
-// The transparent botanical artwork is bundled locally, with color applied only
-// to the blossom so each plant keeps its natural green stem and leaves.
-const roseImage = new URL('./assets/garden-rose.webp', import.meta.url).href;
-function roseArt(tone = 0, seed = 0) {
-  const mirrored = seed % 3 === 0 ? -1 : 1;
-  return `<span class="rose-plant" style="--rose-tone:${tone}deg;--rose-mirror:${mirrored}"><img class="rose-base" src="${roseImage}" alt="" draggable="false"/><img class="rose-tint" src="${roseImage}" alt="" draggable="false"/></span>`;
+// Layered SVG petals reproduce the soft, front-facing roses in the reference.
+// Every blossom has its own gradients; all stems keep their natural green.
+function roseArt(hue = 342, seed = 0, hero = false) {
+  const id = `rose-${seed}`;
+  const hueColor = (light, saturation = 61) => `hsl(${hue} ${saturation}% ${light}%)`;
+  let definitions = '';
+  let petals = '';
+  const radii = [44, 37, 30.5, 24.5, 19, 14.2, 10, 6.5];
+  radii.forEach((radius, layer) => {
+    const count = layer < 3 ? 5 : 4;
+    const light = 76 - layer * 2.1;
+    definitions += `<linearGradient id="${id}-p${layer}" x1=".35" y1="0" x2=".65" y2="1"><stop stop-color="${hueColor(light + 12)}"/><stop offset=".16" stop-color="${hueColor(light + 4)}"/><stop offset=".46" stop-color="${hueColor(light - 9)}"/><stop offset="1" stop-color="${hueColor(light - 17)}"/></linearGradient>`;
+    for (let p = 0; p < count; p++) {
+      const rotation = p * 360 / count + layer * 41 + seed * 7;
+      const skew = Math.sin(seed * 4.1 + p * 1.8 + layer) * 3;
+      // Broad, gently scalloped petal edges; the next whorl covers each base.
+      const edge = 'M-.79-.35C-.87-.5-.69-.69-.58-.77C-.44-.91-.25-.88-.09-.98C.07-1.06.27-.94.41-.85C.6-.78.65-.61.76-.46C.9-.24.7-.06.5.02';
+      const petal = `${edge}C.13.19-.2.2-.44.11C-.62.03-.71-.13-.79-.35Z`;
+      const rim = 'M-.79-.35C-.87-.5-.69-.69-.58-.77C-.44-.91-.25-.88-.09-.98C.07-1.06.27-.94.41-.85C.6-.78.65-.61.76-.46';
+      petals += `<g transform="rotate(${rotation + skew}) scale(${radius})"><path d="${petal}" fill="url(#${id}-p${layer})" stroke="${hueColor(light - 15)}" stroke-opacity=".32" stroke-width=".014"/><path d="${rim}" fill="none" stroke="${hueColor(light + 13, 68)}" stroke-opacity=".82" stroke-width=".024" stroke-linecap="round"/></g>`;
+    }
+  });
+  const bend = Math.sin(seed * 1.7) * 8;
+  const stem = `<path d="M${70 + bend} 340C${56 + bend} 266 80 169 70 82" fill="none" stroke="url(#${id}-stem)" stroke-width="${hero ? 1.5 : 1.15}"/><path d="M72 153C51 154 43 142 40 132C58 132 69 141 72 153Z" fill="url(#${id}-leaf)"/><path d="M72 198C93 196 102 181 104 175C88 175 76 185 72 198Z" fill="url(#${id}-leaf)"/><path d="m70 151-22-14m26 58 23-16" stroke="#8aaa80" stroke-opacity=".6" stroke-width=".6"/>`;
+  const bud = seed > 1 && seed % 9 === 0;
+  const head = bud ? `<g transform="translate(70 61) rotate(-12)"><path d="M0 23C-23 5-22-17-7-31C-8-9 8-10 0 23Z" fill="${hueColor(76)}"/><path d="M0 23C-8 2-1-15 10-26C28-10 19 13 0 23Z" fill="url(#${id}-p2)"/><path d="M0 25C-16 13-16 3-17-5C-8 7-4 11 0 13C6 5 15 0 20-9C20 9 9 21 0 25Z" fill="url(#${id}-leaf)"/></g>` : `<g class="rose-head" transform="translate(70 57)"><path d="m-10 35 11 18 12-18" fill="#467e54"/><g class="rose-petals">${petals}<path d="M-2-4C5-7 9 0 4 4C-2 9-9 1-3-3C1-5 5-1 2 2" fill="none" stroke="${hueColor(84)}" stroke-width=".75" stroke-linecap="round"/></g></g>`;
+  return `<svg class="rose-vector" viewBox="0 0 140 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>${definitions}<linearGradient id="${id}-stem"><stop stop-color="#507249"/><stop offset=".6" stop-color="#73936b"/><stop offset="1" stop-color="#416942"/></linearGradient><linearGradient id="${id}-leaf" x2="1" y2="1"><stop stop-color="#76a46e"/><stop offset=".5" stop-color="#2b7a4c"/><stop offset="1" stop-color="#21643e"/></linearGradient></defs>${stem}${head}</svg>`;
 }
-$('hero-art').innerHTML = roseArt(0, 1);
+$('hero-art').innerHTML = roseArt(342, 1, true);
 let randomSeed = 42;
 function random() { randomSeed = (randomSeed * 16807) % 2147483647; return (randomSeed - 1) / 2147483646; }
-const roseTones = [-9, -4, 0, 0, 7, 15, 23, 32];
+const roseTones = [338, 344, 350, 18, 28, 84, 96, 192, 202];
 const garden = $('garden');
 for (let i = 0; i < 64; i++) {
   const flower = document.createElement('div');
   flower.className = `garden-flower ${i < 22 ? 'garden-back' : 'garden-front'}`;
   const row = i < 22 ? 0 : i < 44 ? 1 : 2;
   const left = ((i % 22) / 21) * 108 - 4 + (random() - .5) * 4;
-  const height = 210 + random() * 145 + row * 18;
-  flower.style.cssText = `--left:${left}%;--height:${height}px;--bottom:${-75 - row * 61 + random() * 50}px;--delay:${(Math.abs(left - 50) * .022 + random() * .65).toFixed(2)}s;--sway:${3 + random() * 3}s;--tilt:${(random() - .5) * 18}deg;z-index:${row + 1}`;
+  const height = 210 + random() * 130 + row * 14;
+  flower.style.cssText = `--left:${left}%;--height:${height}px;--bottom:${-40 - row * 65 + random() * 35}px;--delay:${(Math.abs(left - 50) * .022 + random() * .65).toFixed(2)}s;--sway:${3 + random() * 3}s;--tilt:${(random() - .5) * 18}deg;z-index:${row + 1}`;
   flower.innerHTML = `<div class="flower-sway">${roseArt(roseTones[Math.floor(random() * roseTones.length)], i + 2)}</div>`;
   garden.appendChild(flower);
 }

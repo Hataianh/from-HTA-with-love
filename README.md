@@ -16,7 +16,7 @@ npm run build
 npm run preview -- --port 4173
 ```
 
-Triển khai thư mục `dist/` lên dịch vụ hosting tĩnh. Không cần backend hay API key. Hoa dùng minh hoạ thực vật WebP nền trong suốt được đóng gói trong dự án; các tông màu chỉ áp dụng lên cánh hoa để giữ màu lá tự nhiên. Font được đóng gói cùng website. Âm thanh được tổng hợp bằng Web Audio và chỉ phát khi người xem bật.
+Triển khai thư mục `dist/` lên dịch vụ hosting tĩnh. Không cần backend hay API key. Hoa được vẽ bằng SVG: cánh tròn xếp xoáy, gradient tạo độ sâu, thân mảnh và lá nhỏ theo video tham khảo. Vườn hoa có nhiều màu pastel, nụ hoa và hiệu ứng cánh mở dần. Font được đóng gói cùng website. Âm thanh được tổng hợp bằng Web Audio và chỉ phát khi người xem bật.
 
 ## Tương tác
 
