@@ -16,7 +16,7 @@ npm run build
 npm run preview -- --port 4173
 ```
 
-Triển khai thư mục `dist/` lên dịch vụ hosting tĩnh. Không cần backend hay API key. Hoa được vẽ bằng SVG: cánh tròn xếp xoáy, gradient tạo độ sâu, thân mảnh và lá nhỏ theo video tham khảo. Vườn hoa gồm 4 tầng xen kẽ: 128 bông trên màn hình lớn, 96 bông trên điện thoại, mỗi hoa có 10 lớp cánh. Hoa nở lan từ giữa ra hai bên; cánh hoa được dùng chung dưới dạng ảnh SVG để tránh vẽ lại hàng nghìn nét mỗi khung hình, và các tầng đung đưa nhẹ sau khi nở. Font được đóng gói cùng website. Âm thanh được tổng hợp bằng Web Audio và chỉ phát khi người xem bật.
+Triển khai thư mục `dist/` lên dịch vụ hosting tĩnh. Không cần backend hay API key. Hoa được vẽ bằng SVG: cánh tròn xếp xoáy, gradient tạo độ sâu, thân mảnh và lá nhỏ theo video tham khảo. Vườn hoa có 5 lớp xa–gần với chiều cao thân và kích thước bông độc lập: 132 bông trên máy tính, 98 bông trên điện thoại. Các cụm hoa cao–thấp xen kẽ tạo đường viền nhấp nhô; hoa phía xa nhỏ và nhạt hơn. Mỗi bông có 10 lớp cánh. Khi nở, một canvas duy nhất vẽ chuyển động theo thời gian; sau khi nở xong, 5 lớp đã lưu sẵn đung đưa bằng CSS và không cần vẽ lại liên tục. Hình cánh hoa và thân/lá được lưu sẵn để tái sử dụng. Bông hoa chính chỉ di chuyển bằng transform để tránh thay đổi bố cục từng khung hình. Font được đóng gói cùng website. Âm thanh được tổng hợp bằng Web Audio và chỉ phát khi người xem bật.
 
 ## Tương tác
 
