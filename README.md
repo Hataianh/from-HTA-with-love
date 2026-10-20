@@ -1,0 +1,46 @@
+# Một vườn yêu thương
+
+Website thiệp chúc mừng 20/10 lấy cảm hứng từ video tham khảo: một bông hồng, khu vườn pastel nở rộ và tấm thiệp dành tặng người nhận.
+
+## Chạy dự án
+
+Yêu cầu Node.js 20.19+ hoặc 22.12+ (đã kiểm tra với Node.js 24).
+
+```sh
+npm ci --cache /workspace/.npm-cache
+npm run dev -- --port 5173
+```
+
+```sh
+npm run build
+npm run preview -- --port 4173
+```
+
+Triển khai thư mục `dist/` lên dịch vụ hosting tĩnh. Không cần backend hay API key. Hoa là SVG được tạo tại chỗ; font được đóng gói cùng website. Âm thanh được tổng hợp bằng Web Audio và chỉ phát khi người xem bật.
+
+## Tương tác
+
+- Chạm bông hoa hoặc nút “Chạm để hoa nở” để mở khu vườn.
+- Mở thiệp qua nút lời nhắn; đóng bằng nút ×, phím Escape hoặc chạm bên ngoài.
+- Nút loa bật/tắt giai điệu nhẹ; nút “Ngắm hoa nở lại” bắt đầu lại.
+- Hỗ trợ màn hình nhỏ và tùy chọn giảm chuyển động của hệ điều hành.
+
+## Chỉnh nội dung
+
+Sửa lời chúc, tiêu đề và ngày trong `index.html`; sửa bảng màu hoa trong `src/main.js`; chỉnh bố cục và thời gian hiệu ứng trong `src/style.css`.
+
+Đã kiểm tra tự động trên Chromium ở kích thước 1440×1000 và 390×844: luồng hoa nở, thiệp, Escape, nút đóng, âm thanh, phát lại, không tràn ngang và giảm chuyển động.
+
+## GitHub Pages
+
+Tên repository mong muốn: `chuc-mung-em-iu-20-10-zui-ze`.
+
+1. Trong GitHub → Settings → General, đổi tên repository thành tên trên; giữ repository public.
+2. Trong Settings → Pages → Build and deployment, chọn Source: **GitHub Actions**.
+3. Workflow “Deploy greeting to GitHub Pages” tự chạy khi push lên `master`; có thể chạy lại bằng **Run workflow** trong Actions.
+4. Chờ workflow thành công; lấy đường dẫn website trong Settings → Pages hoặc kết quả deployment.
+
+Đường dẫn dự kiến sau khi đổi tên và deploy thành công:
+`https://hataianh.github.io/chuc-mung-em-iu-20-10-zui-ze/`
+
+`vite.config.js` dùng đường dẫn tài nguyên tương đối, vì vậy việc đổi tên repository không làm hỏng font, CSS và JavaScript.
