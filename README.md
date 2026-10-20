@@ -16,13 +16,14 @@ npm run build
 npm run preview -- --port 4173
 ```
 
-Triển khai thư mục `dist/` lên dịch vụ hosting tĩnh. Không cần backend hay API key. Hoa được vẽ bằng SVG: cánh tròn xếp xoáy, gradient tạo độ sâu, thân mảnh và lá nhỏ theo video tham khảo. Vườn hoa có 5 lớp xa–gần với chiều cao thân và kích thước bông độc lập: 132 bông trên máy tính, 98 bông trên điện thoại. Các cụm hoa cao–thấp xen kẽ tạo đường viền nhấp nhô; hoa phía xa nhỏ và nhạt hơn. Khoảng một phần bảy số cây là nụ hoa kín hoặc hé cánh, có đài xanh và cùng rung rinh theo gió. Mỗi bông có 10 lớp cánh. Một canvas vẽ giai đoạn nở; sau đó các cụm hoa nhỏ đã được vẽ sẵn chuyển động bằng CSS transform với nhịp và hướng gió riêng, cả thân, lá và cánh đều đung đưa mà không cần vẽ lại liên tục. Vườn tạm ngừng vẽ khi tab ẩn hoặc đang mở thiệp; chế độ giảm chuyển động dùng các lớp tĩnh. Hình cánh hoa và thân/lá được lưu sẵn để tái sử dụng. Bông hoa chính chỉ di chuyển bằng transform để tránh thay đổi bố cục từng khung hình. Font được đóng gói cùng website. Âm thanh được tổng hợp bằng Web Audio và chỉ phát khi người xem bật.
+Triển khai thư mục `dist/` lên dịch vụ hosting tĩnh. Không cần backend hay API key. Hoa được vẽ bằng SVG: cánh tròn xếp xoáy, gradient tạo độ sâu, thân mảnh và lá nhỏ theo video tham khảo. Vườn hoa có 5 lớp xa–gần với chiều cao thân và kích thước bông độc lập: 132 bông trên máy tính, 98 bông trên điện thoại. Các cụm hoa cao–thấp xen kẽ tạo đường viền nhấp nhô; hoa phía xa nhỏ và nhạt hơn. Khoảng một phần bảy số cây là nụ hoa kín hoặc hé cánh, có đài xanh và cùng rung rinh theo gió. Mỗi bông có 10 lớp cánh. Một canvas vẽ giai đoạn nở; sau đó các cụm hoa nhỏ đã được vẽ sẵn chuyển động với nhịp và hướng gió riêng qua Web Animations; nếu API thiếu hoặc không thực sự phát, tự chuyển sang requestAnimationFrame để cập nhật transform, cả thân, lá và cánh đều đung đưa mà không cần vẽ lại liên tục. Vườn tạm ngừng vẽ khi tab ẩn hoặc đang mở thiệp; chế độ giảm chuyển động dùng các lớp tĩnh. Hình cánh hoa và thân/lá được lưu sẵn để tái sử dụng. Bông hoa chính chỉ di chuyển bằng transform để tránh thay đổi bố cục từng khung hình. Font được đóng gói cùng website. Âm thanh được tổng hợp bằng Web Audio và chỉ phát khi người xem bật.
 
 ## Tương tác
 
 - Chạm bông hoa hoặc nút “Chạm để hoa nở” để mở khu vườn.
 - Mở thiệp qua nút lời nhắn; đóng bằng nút ×, phím Escape hoặc chạm bên ngoài.
 - Nút loa bật/tắt giai điệu nhẹ; nút “Ngắm hoa nở lại” bắt đầu lại.
+- Nút hình gió cạnh loa bật/tắt rung rinh và ghi nhớ lựa chọn trong trình duyệt. Mặc định tôn trọng chế độ giảm chuyển động của hệ điều hành; có thể chủ động bật lại ngay trên trang, kể cả khi Windows Server tắt các hiệu ứng hệ thống.
 - Hỗ trợ màn hình nhỏ và tùy chọn giảm chuyển động của hệ điều hành.
 
 ## Chỉnh nội dung

@@ -1,3 +1,5 @@
+import { createWindController } from './wind.js';
+
 // Cache petals, stems and complete plants. One canvas handles opening; each
 // cached cluster then sways independently using composited CSS transforms.
 const PALETTE = [338, 344, 350, 18, 28, 84, 96, 192, 202];
@@ -86,6 +88,7 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
   let width = 0, height = 0;
   let seedFlowers = [];
   let readyComplete = false;
+  const wind = createWindController(engine => { container.dataset.windEngine = engine; });
   const heads = new Map();
   const buds = new Map(PALETTE.flatMap(hue => [0, 1].map(variant => [`${hue}-${variant}`, budSprite(hue, variant)])));
   const stems = LAYERS.map((_, depth) => [stemSprite(depth, 0), stemSprite(depth, 1)]);
@@ -208,6 +211,7 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
   }
 
   function paintStatic() {
+    wind.stop();
     if (!reducedMotion) {
       const fragment = document.createDocumentFragment();
       const dpr = Math.min(devicePixelRatio || 1, 1.5);
@@ -240,8 +244,11 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
           plant.width = Math.ceil(clusterWidth * resolution);
           plant.height = Math.ceil(clusterHeight * resolution);
           const lead = flowers[0];
-          const wind = (.022 + depth * .003) * ((index + depth) % 2 ? -1 : 1);
-          plant.style.cssText = `left:${left}px;top:${top}px;width:${clusterWidth}px;height:${clusterHeight}px;--lean:0rad;--wind:${wind}rad;--period:${(Math.PI * 2 / lead.frequency).toFixed(2)}s;--delay:${(lead.phase / Math.PI * .3).toFixed(2)}s`;
+          const amplitude = (.022 + depth * .003) * ((index + depth) % 2 ? -1 : 1);
+          plant.dataset.wind = String(amplitude);
+          plant.dataset.period = String(Math.PI * 2 / lead.frequency * 1000);
+          plant.dataset.delay = String(lead.phase / Math.PI * 300);
+          plant.style.cssText = `left:${left}px;top:${top}px;width:${clusterWidth}px;height:${clusterHeight}px;--lean:0rad;--wind:${amplitude}rad;--period:${(Math.PI * 2 / lead.frequency).toFixed(2)}s;--delay:${(lead.phase / Math.PI * .3).toFixed(2)}s`;
           const ctx = plant.getContext('2d');
           ctx.setTransform(resolution, 0, 0, resolution, -left * resolution, -top * resolution);
           for (const flower of flowers) paintFlower(ctx, depth, flower, 1);
@@ -249,6 +256,7 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
         });
       }
       sprigs.replaceChildren(fragment);
+      syncWind();
       return;
     }
     for (let depth = 0; depth < layers.length; depth++) {
@@ -274,11 +282,21 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
     return finished;
   }
 
+  function syncWind() {
+    if (!active || reducedMotion || container.dataset.animation !== 'idle') {
+      wind.stop();
+      return;
+    }
+    if (!wind.running) wind.start(sprigs.querySelectorAll('.garden-sprig'));
+    if (paused || document.hidden) wind.pause();
+    else wind.resume();
+  }
+
   function tick(now) {
     frame = 0;
     if (!active || destroyed || paused) return;
     if (!draw(now)) frame = requestAnimationFrame(tick);
-    else container.dataset.animation = 'idle';
+    else { container.dataset.animation = 'idle'; syncWind(); }
   }
 
   const observer = new ResizeObserver(() => {
@@ -288,39 +306,65 @@ export function createGarden(container, getBlossomUrl, reducedMotion) {
   });
   observer.observe(container);
 
-  document.addEventListener('visibilitychange', () => {
+  const onVisibilityChange = () => {
     cancelAnimationFrame(frame); frame = 0;
-    if (!document.hidden && active && !paused) frame = requestAnimationFrame(tick);
-  });
+    if (document.hidden) wind.pause();
+    else if (active && !paused) {
+      if (container.dataset.animation === 'idle') syncWind();
+      else frame = requestAnimationFrame(tick);
+    }
+  };
+  document.addEventListener('visibilitychange', onVisibilityChange);
 
   return {
     ready,
     bloom() {
       active = true;
       start = performance.now();
+      wind.stop();
       container.dataset.animation = 'blooming';
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(tick);
     },
     pause() {
       paused = true;
+      wind.pause();
       cancelAnimationFrame(frame); frame = 0;
     },
     resume() {
       paused = false;
       if (active && !document.hidden) {
         cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(tick);
+        if (container.dataset.animation === 'idle') syncWind();
+        else frame = requestAnimationFrame(tick);
+      }
+    },
+    setReducedMotion(value) {
+      if (Boolean(value) === reducedMotion) return;
+      reducedMotion = Boolean(value);
+      wind.stop();
+      container.dataset.renderer = reducedMotion ? 'still' : 'wind';
+      if (!readyComplete) return;
+      paintStatic();
+      if (active) {
+        cancelAnimationFrame(frame); frame = 0;
+        if (reducedMotion) {
+          draw(performance.now()); container.dataset.animation = 'idle';
+        } else if (container.dataset.animation === 'idle') syncWind();
+        else frame = requestAnimationFrame(tick);
       }
     },
     reset() {
       active = false; start = null;
+      wind.stop();
       cancelAnimationFrame(frame); frame = 0;
       motionCtx.clearRect(0, 0, width, height);
       container.dataset.animation = 'idle';
     },
     destroy() {
       destroyed = true;
+      wind.stop();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       cancelAnimationFrame(frame);
       observer.disconnect();
     },

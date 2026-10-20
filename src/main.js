@@ -20,7 +20,14 @@ import './style.css';
 import { createGarden } from './garden.js';
 
 const $ = (id) => document.getElementById(id);
-const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+let motionChoice = null;
+try {
+  const saved = localStorage.getItem('garden-motion');
+  if (saved === 'on' || saved === 'off') motionChoice = saved;
+} catch {}
+let reduceMotion = motionChoice === 'off' || (motionChoice !== 'on' && motionQuery.matches);
+document.documentElement.dataset.motion = reduceMotion ? 'off' : 'on';
 let bloomed = false;
 let bloomTimer;
 
@@ -66,6 +73,40 @@ $('hero-art').innerHTML = roseArt(342, 1, true);
 let randomSeed = 42;
 function random() { randomSeed = (randomSeed * 16807) % 2147483647; return (randomSeed - 1) / 2147483646; }
 const garden = createGarden($('garden'), getBlossomUrl, reduceMotion);
+const motionButton = document.createElement('button');
+motionButton.id = 'motion-toggle';
+motionButton.type = 'button';
+motionButton.className = 'icon-button motion-toggle';
+motionButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M3 8h11c5 0 5-6 1-6-2 0-3 1-3 2M3 12h15c5 0 5 7 1 7-2 0-3-1-3-2M3 16h6c4 0 4 5 1 5"/><path class="motion-slash" d="m4 3 16 18"/></svg>';
+$('sound').before(motionButton);
+function updateMotionControl() {
+  const label = reduceMotion ? 'Bật hoa rung rinh' : 'Tắt hoa rung rinh';
+  motionButton.setAttribute('aria-label', label);
+  motionButton.setAttribute('title', label);
+  motionButton.setAttribute('aria-pressed', String(!reduceMotion));
+}
+function applyMotionPreference(next) {
+  reduceMotion = next;
+  document.documentElement.dataset.motion = next ? 'off' : 'on';
+  garden.setReducedMotion(next);
+  if (bloomed && next) {
+    clearTimeout(bloomTimer);
+    $('experience').classList.add('settled');
+  }
+  updateMotionControl();
+}
+motionButton.addEventListener('click', () => {
+  motionChoice = reduceMotion ? 'on' : 'off';
+  try { localStorage.setItem('garden-motion', motionChoice); } catch {}
+  applyMotionPreference(motionChoice === 'off');
+});
+const onSystemMotionChange = () => {
+  if (motionChoice === null) applyMotionPreference(motionQuery.matches);
+};
+if (motionQuery.addEventListener) motionQuery.addEventListener('change', onSystemMotionChange);
+else motionQuery.addListener(onSystemMotionChange);
+updateMotionControl();
+
 const definitions = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 definitions.setAttribute('class', 'rose-definitions');
 definitions.setAttribute('aria-hidden', 'true');
