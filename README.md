@@ -33,14 +33,14 @@ Sửa lời chúc, tiêu đề và ngày trong `index.html`; sửa bảng màu h
 
 ## GitHub Pages
 
-Tên repository mong muốn: `chuc-mung-em-iu-20-10-zui-ze`.
+Tên repository: `from-HTA-with-love`.
 
-1. Trong GitHub → Settings → General, đổi tên repository thành tên trên; giữ repository public.
+1. Repository `Hataianh/from-HTA-with-love` sử dụng chế độ public.
 2. Trong Settings → Pages → Build and deployment, chọn Source: **GitHub Actions**.
 3. Workflow “Deploy greeting to GitHub Pages” tự chạy khi push lên `master`; có thể chạy lại bằng **Run workflow** trong Actions.
 4. Chờ workflow thành công; lấy đường dẫn website trong Settings → Pages hoặc kết quả deployment.
 
 Đường dẫn dự kiến sau khi đổi tên và deploy thành công:
-`https://hataianh.github.io/chuc-mung-em-iu-20-10-zui-ze/`
+`https://hataianh.github.io/from-HTA-with-love/`
 
 `vite.config.js` dùng đường dẫn tài nguyên tương đối, vì vậy việc đổi tên repository không làm hỏng font, CSS và JavaScript.
